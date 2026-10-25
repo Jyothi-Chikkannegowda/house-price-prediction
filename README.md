@@ -26,7 +26,7 @@ Python, Django, Scikit-learn, Pandas, NumPy, SQLite, Bootstrap 5, Chart.js
 ## Run Locally
 
 ```
-git clone https://github.com/YOUR-USERNAME/house-price-prediction.git
+git clone https://github.com/Jyothi-Chikkannegowda/house-price-prediction.git
 cd house-price-prediction
 python -m venv venv
 venv\Scripts\activate
