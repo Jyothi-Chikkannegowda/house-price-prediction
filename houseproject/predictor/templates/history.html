@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}My History{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body p-4">
+    <h5 class="mb-3">My Saved Predictions</h5>
+    {% if items %}
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>Date</th><th>Location</th><th>Area</th><th>BHK</th><th>Bath</th><th>Price</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for p in items %}
+                <tr>
+                    <td class="small">{{ p.created_at|date:"d M Y, H:i" }}</td>
+                    <td>{{ p.location }}</td>
+                    <td>{{ p.sqft|floatformat:0 }} sq ft</td>
+                    <td>{{ p.bhk }}</td>
+                    <td>{{ p.bath }}</td>
+                    <td><strong>{{ p.price_text }}</strong></td>
+                    <td>
+                        <form method="POST" action="{% url 'delete_prediction' p.pk %}" class="m-0">
+                            {% csrf_token %}
+                            <button class="btn btn-outline-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0">No predictions yet. Go to <a href="{% url 'predict' %}">Predict</a> and try one.</p>
+    {% endif %}
+</div></div>
+{% endblock %}

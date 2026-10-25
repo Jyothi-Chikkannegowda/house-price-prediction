@@ -1,0 +1,5 @@
+model,cv_r2,r2,mae,params
+Ridge Regression,0.71,-1.251,25.34,{'alpha': 0.1}
+Random Forest,0.81,0.704,18.12,"{'max_depth': None, 'min_samples_leaf': 1, 'n_estimators': 200}"
+Gradient Boosting,0.841,0.731,17.54,"{'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300}"
+Hist Gradient Boosting,0.801,0.664,19.3,"{'learning_rate': 0.1, 'max_iter': 200, 'max_leaf_nodes': 15}"

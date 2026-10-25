@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Model Insights{% endblock %}
+{% block content %}
+{% if info %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body">
+        <div class="stat-label">Best model</div><h6 class="mb-0">{{ info.best_model }}</h6></div></div></div>
+    <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body">
+        <div class="stat-label">R² score</div><h5 class="mb-0">{{ info.r2 }}</h5></div></div></div>
+    <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body">
+        <div class="stat-label">MAE (lakhs)</div><h5 class="mb-0">{{ info.mae }}</h5></div></div></div>
+    <div class="col-6 col-md-3"><div class="card stat-card"><div class="card-body">
+        <div class="stat-label">Train / Test rows</div><h5 class="mb-0">{{ info.train_rows }} / {{ info.test_rows }}</h5></div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card"><div class="card-body">
+            <h6>What affects the price most?</h6>
+            <canvas id="impChart"></canvas>
+            <p class="text-secondary small mt-2 mb-0">Permutation importance: how much accuracy drops when a feature is shuffled.</p>
+        </div></div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card mb-4"><div class="card-body">
+            <h6>Model comparison (after GridSearchCV tuning)</h6>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Model</th><th>CV R²</th><th>Test R²</th><th>MAE</th></tr></thead>
+                    <tbody>
+                        {% for r in info.comparison %}
+                        <tr {% if r.model == info.best_model %}class="table-success"{% endif %}>
+                            <td>{{ r.model }}</td><td>{{ r.cv_r2 }}</td><td>{{ r.r2 }}</td><td>{{ r.mae }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div></div>
+        <div class="card"><div class="card-body">
+            <h6>Best hyperparameters</h6>
+            <ul class="mb-0 small">
+                {% for k, v in info.best_params.items %}<li><code>{{ k }}</code> = {{ v }}</li>{% endfor %}
+            </ul>
+        </div></div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">model_info.json not found. Run train_model.py first.</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if info %}
+{{ info.importance|json_script:"imp-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    const imp = JSON.parse(document.getElementById("imp-data").textContent);
+    function applyChartTheme() {
+        const dark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+        Chart.defaults.color = dark ? "#cbd5e1" : "#495057";
+        Chart.defaults.borderColor = dark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
+    }
+    applyChartTheme();
+    const impChart = new Chart(document.getElementById("impChart"), {
+        type: "bar",
+        data: { labels: Object.keys(imp), datasets: [{
+            data: Object.values(imp), backgroundColor: "#2d7ff9" }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } },
+                   scales: { x: { title: { display: true, text: "Importance (%)" } } } }
+    });
+    window.addEventListener("themechange", () => { applyChartTheme(); impChart.update(); });
+</script>
+{% endif %}
+{% endblock %}

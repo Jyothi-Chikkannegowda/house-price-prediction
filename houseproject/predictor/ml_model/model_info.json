@@ -1,0 +1,62 @@
+{
+  "best_model": "Gradient Boosting",
+  "r2": 0.731,
+  "mae": 17.54,
+  "best_params": {
+    "learning_rate": 0.1,
+    "max_depth": 5,
+    "n_estimators": 300
+  },
+  "comparison": [
+    {
+      "model": "Ridge Regression",
+      "cv_r2": 0.71,
+      "r2": -1.251,
+      "mae": 25.34,
+      "params": {
+        "alpha": 0.1
+      }
+    },
+    {
+      "model": "Random Forest",
+      "cv_r2": 0.81,
+      "r2": 0.704,
+      "mae": 18.12,
+      "params": {
+        "max_depth": null,
+        "min_samples_leaf": 1,
+        "n_estimators": 200
+      }
+    },
+    {
+      "model": "Gradient Boosting",
+      "cv_r2": 0.841,
+      "r2": 0.731,
+      "mae": 17.54,
+      "params": {
+        "learning_rate": 0.1,
+        "max_depth": 5,
+        "n_estimators": 300
+      }
+    },
+    {
+      "model": "Hist Gradient Boosting",
+      "cv_r2": 0.801,
+      "r2": 0.664,
+      "mae": 19.3,
+      "params": {
+        "learning_rate": 0.1,
+        "max_iter": 200,
+        "max_leaf_nodes": 15
+      }
+    }
+  ],
+  "importance": {
+    "Area (sq ft)": 85.2,
+    "Location": 11.9,
+    "Bathrooms": 2.0,
+    "BHK": 0.8
+  },
+  "train_rows": 8220,
+  "test_rows": 2055
+}

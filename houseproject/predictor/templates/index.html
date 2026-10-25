@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-4">
+    <h2 class="page-title mb-1">Know what your home is worth</h2>
+    <p class="text-secondary mb-0">Get an instant machine learning price estimate for any Bengaluru location.</p>
+</div>
+
+<div class="row g-4">
+
+    <!-- Left: form + recent -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">House Details</h5>
+                <form method="POST">
+                    {% csrf_token %}
+                    <label class="form-label">📍 Location</label>
+                    <select name="location" class="form-select mb-3" required>
+                        {% for loc in locations %}
+                        <option value="{{ loc }}" {% if selected.location == loc %}selected{% endif %}>{{ loc }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label class="form-label">📐 Area (sq ft)</label>
+                    <input type="number" name="sqft" class="form-control mb-3" min="300" max="10000"
+                           value="{{ selected.sqft|default:1200 }}" required>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label">🛏 BHK</label>
+                            <input type="number" name="bhk" class="form-control mb-4" min="1" max="10"
+                                   value="{{ selected.bhk|default:2 }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">🚿 Bathrooms</label>
+                            <input type="number" name="bath" class="form-control mb-4" min="1" max="10"
+                                   value="{{ selected.bath|default:2 }}" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Predict Price →</button>
+                </form>
+                {% if error %}<div class="alert alert-danger mt-3 mb-0">{{ error }}</div>{% endif %}
+            </div>
+        </div>
+
+        {% if history %}
+        <div class="card mt-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0">Recent Predictions</h6>
+                    <a href="{% url 'history' %}" class="small">View all</a>
+                </div>
+                {% for h in history %}
+                <div class="recent-item">
+                    <div class="fw-bold" style="color: var(--brand);">{{ h.price_text }}</div>
+                    <div class="small text-secondary">{{ h.location }} · {{ h.sqft|floatformat:0 }} sq ft · {{ h.bhk }} BHK · {{ h.bath }} Bath</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right: results -->
+    <div class="col-lg-8">
+        {% if price %}
+        <div class="price-box p-4 p-md-5 mb-4">
+            <div class="small text-uppercase opacity-75 fw-semibold" style="letter-spacing:1px;">Estimated Price</div>
+            <h1 id="priceCounter" class="fw-bold my-2">{{ price_text }}</h1>
+            <div class="opacity-75">{{ selected.location }} · {{ selected.sqft }} sq ft · {{ selected.bhk }} BHK · {{ selected.bath }} Bath</div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card"><div class="card-body d-flex align-items-center gap-3">
+                    <span class="stat-icon">⬇️</span>
+                    <div><div class="stat-label">Low estimate</div><h5 class="fw-bold mb-0">{{ low_text }}</h5></div>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card"><div class="card-body d-flex align-items-center gap-3">
+                    <span class="stat-icon">⬆️</span>
+                    <div><div class="stat-label">High estimate</div><h5 class="fw-bold mb-0">{{ high_text }}</h5></div>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card"><div class="card-body d-flex align-items-center gap-3">
+                    <span class="stat-icon">📊</span>
+                    <div><div class="stat-label">Per sq ft</div><h5 class="fw-bold mb-0">₹{{ per_sqft }}</h5></div>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card"><div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Price vs Area ({{ selected.location }})</h6>
+                    <canvas id="trendChart"></canvas>
+                </div></div>
+            </div>
+            <div class="col-md-6">
+                <div class="card"><div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Same House, Other Locations</h6>
+                    <canvas id="locChart"></canvas>
+                </div></div>
+            </div>
+        </div>
+        <p class="text-secondary small mt-3">
+            This is a machine learning estimate based on past listings, not an exact market price.
+        </p>
+        {% else %}
+        <div class="card">
+            <div class="card-body empty-state">
+                <div class="big">🏡</div>
+                <h4 class="fw-bold mt-2">Your estimate will appear here</h4>
+                <p class="text-secondary mb-0">Choose a location, enter the size, and click <strong>Predict Price</strong>.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if chart_data %}
+{{ chart_data|json_script:"chart-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    const d = JSON.parse(document.getElementById("chart-data").textContent);
+
+    function fmt(v) {
+        return v >= 100 ? "₹" + (v / 100).toFixed(2) + " Cr" : "₹" + v.toFixed(2) + " Lakhs";
+    }
+    (function animate() {
+        const el = document.getElementById("priceCounter");
+        const start = performance.now(), ms = 1200;
+        function step(now) {
+            const p = Math.min((now - start) / ms, 1);
+            el.textContent = fmt(d.price * (1 - Math.pow(1 - p, 3)));
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    })();
+
+    function applyChartTheme() {
+        const dark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+        Chart.defaults.color = dark ? "#9aa3b8" : "#6b7280";
+        Chart.defaults.borderColor = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+        Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    }
+    applyChartTheme();
+
+    const charts = [];
+    charts.push(new Chart(document.getElementById("trendChart"), {
+        type: "line",
+        data: { labels: d.trend_labels, datasets: [{
+            label: "Price (Lakhs)", data: d.trend_values,
+            borderColor: "#4f46e5", backgroundColor: "rgba(79,70,229,0.14)",
+            fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: "#4f46e5" }] },
+        options: { plugins: { legend: { display: false } },
+                   scales: { y: { title: { display: true, text: "Lakhs" } } } }
+    }));
+    charts.push(new Chart(document.getElementById("locChart"), {
+        type: "bar",
+        data: { labels: d.loc_labels, datasets: [{
+            label: "Price (Lakhs)", data: d.loc_values, borderRadius: 8,
+            backgroundColor: d.loc_labels.map(l => l === d.selected_location ? "#10b981" : "#a5b4fc") }] },
+        options: { plugins: { legend: { display: false } },
+                   scales: { y: { title: { display: true, text: "Lakhs" } } } }
+    }));
+
+    window.addEventListener("themechange", () => {
+        applyChartTheme();
+        charts.forEach(c => c.update());
+    });
+</script>
+{% endif %}
+{% endblock %}
